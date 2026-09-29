@@ -1,0 +1,40 @@
+Company: Veridian Health Systems
+Role: Software Engineer, New Grad (Backend & AI Platform)
+Location: Dallas, TX (Hybrid, 3 days in office)
+Start Date: Summer 2027
+
+About Us
+Veridian builds AI-powered clinical operations software used by 400+ hospitals. Our platform processes millions of patient workflow records daily and must meet strict HIPAA and SOC 2 requirements. We're growing our AI Platform team and looking for new grads who can build reliable backend systems and communicate clearly with non-technical stakeholders.
+
+What You'll Do
+- Design and build Python/FastAPI microservices that power our LLM-based clinical documentation features
+- Build and maintain data pipelines that ingest large volumes of records into PostgreSQL on AWS
+- Optimize LLM inference costs and latency through batching, caching, and prompt engineering
+- Implement configurable compliance checks so our platform adapts to changing HIPAA and SOC 2 requirements without major rewrites
+- Work directly with product managers, clinical staff, and customer-facing teams to translate requirements into technical designs
+- Present technical progress and tradeoffs to non-technical stakeholders in regular demos
+- Write tested, production-ready code with CI/CD pipelines and monitoring
+
+Required Qualifications
+- Bachelor's degree in Computer Science or related field (graduating by Summer 2027)
+- Strong proficiency in Python and SQL
+- Experience building REST APIs with FastAPI, Flask, or similar frameworks
+- Experience with relational databases, ideally PostgreSQL
+- Familiarity with AWS services (EC2, S3, IAM)
+- Experience with Docker and CI/CD tools such as GitHub Actions
+- Strong written and verbal communication skills
+
+Preferred Qualifications
+- Experience integrating LLMs into production applications
+- Familiarity with security and compliance frameworks (HIPAA, SOC 2, ISO 27001, NIST)
+- Experience with Redis or other caching/queueing systems
+- Internship experience at a startup or fast-paced environment
+- AWS certification (or in progress)
+- Experience with Kubernetes or Terraform
+- Hackathon wins or strong personal projects
+
+Why Veridian
+- Competitive new grad compensation plus equity
+- Mentorship program pairing every new grad with a senior engineer
+- $2,000 annual learning budget
+- Meaningful work improving healthcare outcomes
