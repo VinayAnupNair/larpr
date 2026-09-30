@@ -1,0 +1,25 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Personal data and generated output
+data/base_resume.json
+data/base_resume.json.bak
+data/base_resume.pdf
+data/*.db
+output/
+jd*.txt
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,7 @@
+anthropic
+flask
+jinja2
+playwright
+pdfplumber
+pypdf
+python-dotenv

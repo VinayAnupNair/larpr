@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaRPR | Resume workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div><div class="brand">LaRPR<span>.</span></div><div class="eyebrow">Resume tailoring</div><h1>Tailor your resume to any job.</h1></div>
+      <div class="header-note">base resume → tailored PDF<nav><a class="active" href="{{ url_for('index') }}">Tailor</a><a href="{{ url_for('profile') }}">Profile</a></nav></div>
+    </header>
+    <div class="alert" id="error" hidden></div>
+    <div class="result" id="result" hidden></div>
+    <div class="layout">
+      <section class="panel form-panel">
+        <div class="panel-title"><h2>Paste the job description</h2><span class="tag">Claude assisted</span></div>
+        <form id="gen-form">
+          <div class="fields">
+            <label class="full">Job description<textarea name="job_description" required placeholder="Paste the complete job description here..."></textarea></label>
+          </div>
+          <div class="actions"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font:500 12px 'DM Mono',monospace;color:var(--muted);text-transform:none;letter-spacing:0"><input type="checkbox" name="infer_skills" value="1" style="width:auto;margin:0;accent-color:var(--teal)"> Infer umbrella skills</label><span class="hint">Step 1 tailors to JSON you can edit. Step 2 renders the PDF.</span><button type="submit" id="gen-btn">Tailor resume →</button></div>
+        </form>
+      </section>
+      <section class="panel form-panel" id="editor" hidden style="margin-top:22px">
+        <div class="panel-title"><h2>Review and edit</h2><span class="tag">Editable JSON</span></div>
+        <p class="hint" style="margin-top:0">Add, remove, or reword skills, bullets, and the summary directly. Only list skills you can back up in an interview.</p>
+        <textarea id="json-editor" spellcheck="false" style="min-height:520px;font:12.5px 'DM Mono',monospace;line-height:1.5"></textarea>
+        <div class="actions"><span class="hint" id="json-status"></span><button type="button" id="render-btn">Render PDF →</button></div>
+      </section>
+    </div>
+  </main>
+<script>
+const form = document.getElementById('gen-form'), btn = document.getElementById('gen-btn');
+const err = document.getElementById('error'), res = document.getElementById('result');
+const editor = document.getElementById('editor'), box = document.getElementById('json-editor');
+const jsonStatus = document.getElementById('json-status'), renderBtn = document.getElementById('render-btn');
+let meta = {}, tailorCost = 0;
+
+const showError = m => { err.textContent = m; err.hidden = false; };
+
+box.addEventListener('input', () => {
+  try { JSON.parse(box.value); jsonStatus.textContent = 'Valid JSON'; }
+  catch (e) { jsonStatus.textContent = 'Invalid JSON: ' + e.message; }
+});
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  err.hidden = res.hidden = editor.hidden = true;
+  btn.disabled = true; btn.textContent = 'Tailoring…';
+  try {
+    const r = await fetch('/tailor', { method: 'POST', body: new FormData(form) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Request failed');
+    meta = { company: data.company, role: data.role };
+    tailorCost = data.cost;
+    box.value = JSON.stringify(data.resume, null, 2);
+    jsonStatus.textContent = 'Valid JSON';
+    editor.hidden = false;
+    res.textContent = 'Tailored. API cost so far: $' + tailorCost.toFixed(4);
+    res.hidden = false;
+    editor.scrollIntoView({ behavior: 'smooth' });
+  } catch (ex) { showError(ex.message); }
+  finally { btn.disabled = false; btn.textContent = 'Tailor resume →'; }
+});
+
+renderBtn.addEventListener('click', async () => {
+  err.hidden = true;
+  let resume;
+  try { resume = JSON.parse(box.value); } catch (ex) { return showError('Invalid JSON: ' + ex.message); }
+  renderBtn.disabled = true; renderBtn.textContent = 'Rendering…';
+  try {
+    const r = await fetch('/render', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resume, ...meta }),
+    });
+    if (!r.ok) throw new Error((await r.json()).error || 'Request failed');
+    const cost = parseFloat(r.headers.get('X-Cost-USD') || '0');
+    const name = (r.headers.get('Content-Disposition') || '').match(/filename="?([^";]+)/);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(await r.blob());
+    a.download = name ? name[1] : 'resume.pdf';
+    a.click();
+    res.textContent = 'PDF downloaded. API cost: $' + (tailorCost + cost).toFixed(4) +
+      ' (tailor $' + tailorCost.toFixed(4) + ' + render $' + cost.toFixed(4) + ')';
+    res.hidden = false;
+  } catch (ex) { showError(ex.message); }
+  finally { renderBtn.disabled = false; renderBtn.textContent = 'Render PDF →'; }
+});
+</script>
+</body>
+</html>

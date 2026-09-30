@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root {
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-size-body: 10pt;
+    --font-size-name: 20pt;
+    --font-size-contact: 9pt;
+    --font-size-heading: 11pt;
+
+    --line-height: calc(1.15 * {{ scale }});
+    --section-gap: calc(5pt * {{ scale }});
+    --entry-gap: calc(1.5pt * {{ scale }});
+    --bullet-gap: calc(0.5pt * {{ scale }});
+    --heading-rule-gap: calc(1pt * {{ scale }});
+    --bullet-indent: 0.15in;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height);
+    color: #000;
+    background: #fff;
+  }
+
+  .resume-content {
+    width: 100%;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: var(--section-gap);
+  }
+
+  .header h1 {
+    font-size: var(--font-size-name);
+    font-weight: 700;
+    margin-bottom: 1pt;
+  }
+
+  .contact-line {
+    font-size: var(--font-size-contact);
+  }
+
+  .contact-line a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  .section {
+    margin-bottom: var(--section-gap);
+  }
+
+  .section-heading {
+    font-size: var(--font-size-heading);
+    font-variant: small-caps;
+    font-weight: 700;
+    border-bottom: 0.5pt solid #000;
+    padding-bottom: var(--heading-rule-gap);
+    margin-bottom: calc(2pt * {{ scale }});
+  }
+
+  .entry {
+    margin-bottom: var(--entry-gap);
+  }
+
+  .entry-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .entry-left {
+    font-weight: 700;
+  }
+
+  .entry-right {
+    text-align: right;
+    white-space: nowrap;
+    padding-left: 8pt;
+  }
+
+  .entry-sub-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .entry-sub-left {
+    font-style: italic;
+  }
+
+  .entry-sub-right {
+    font-style: italic;
+    text-align: right;
+    white-space: nowrap;
+    padding-left: 8pt;
+  }
+
+  .cert-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--entry-gap);
+  }
+
+  .cert-name {
+    font-weight: 700;
+  }
+
+  .coursework {
+    margin-top: var(--bullet-gap);
+    padding-left: var(--bullet-indent);
+  }
+
+  .coursework-label {
+    font-weight: 700;
+  }
+
+  .bullets {
+    list-style: none;
+    padding-left: var(--bullet-indent);
+  }
+
+  .bullets li {
+    margin-bottom: var(--bullet-gap);
+    text-indent: calc(-1 * var(--bullet-indent));
+    padding-left: var(--bullet-indent);
+  }
+
+  .bullets li::before {
+    content: "\2022";
+    display: inline-block;
+    width: var(--bullet-indent);
+    text-indent: 0;
+  }
+
+  .skills-row {
+    margin-bottom: var(--bullet-gap);
+    padding-left: var(--bullet-indent);
+  }
+
+  .skills-category {
+    font-weight: 700;
+  }
+
+  .project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .project-name {
+    font-weight: 700;
+  }
+
+  .project-subtitle {
+    font-style: italic;
+  }
+
+  .project-tech {
+    font-style: italic;
+  }
+
+  .project-date {
+    text-align: right;
+    white-space: nowrap;
+    padding-left: 8pt;
+  }
+</style>
+</head>
+<body>
+<div class="resume-content">
+
+  <div class="header">
+    <h1>{{ resume.header.name }}</h1>
+    <div class="contact-line">
+      {% set parts = [] %}
+      {% if resume.header.location %}{% set _ = parts.append(resume.header.location) %}{% endif %}
+      {% if resume.header.phone %}{% set _ = parts.append(resume.header.phone) %}{% endif %}
+      {% if resume.header.email %}{% set _ = parts.append('<a href="mailto:' ~ resume.header.email ~ '">' ~ resume.header.email ~ '</a>') %}{% endif %}
+      {% if resume.header.linkedin %}
+        {% if resume.header.linkedin_url %}
+          {% set _ = parts.append('<a href="' ~ resume.header.linkedin_url ~ '">' ~ resume.header.linkedin ~ '</a>') %}
+        {% else %}
+          {% set _ = parts.append(resume.header.linkedin) %}
+        {% endif %}
+      {% endif %}
+      {% if resume.header.github %}
+        {% if resume.header.github_url %}
+          {% set _ = parts.append('<a href="' ~ resume.header.github_url ~ '">' ~ resume.header.github ~ '</a>') %}
+        {% else %}
+          {% set _ = parts.append(resume.header.github) %}
+        {% endif %}
+      {% endif %}
+      {% if resume.header.website %}{% set _ = parts.append('<a href="' ~ resume.header.website ~ '">' ~ resume.header.website ~ '</a>') %}{% endif %}
+      {{ parts | join(" | ") }}
+    </div>
+  </div>
+
+  {% if resume.summary %}
+  <div class="section">
+    <div class="section-heading">Summary</div>
+    <p>{{ resume.summary }}</p>
+  </div>
+  {% endif %}
+
+  {% if resume.education %}
+  <div class="section">
+    <div class="section-heading">Education</div>
+    {% for edu in resume.education %}
+      {% if edu.type == "certification" %}
+      <div class="cert-row">
+        <span class="cert-name">{{ edu.institution }}</span>
+        <span class="entry-right">{{ edu.date }}</span>
+      </div>
+      {% else %}
+      <div class="entry">
+        <div class="entry-row">
+          <span class="entry-left">{{ edu.institution }}</span>
+          <span class="entry-right">{{ edu.date }}</span>
+        </div>
+        {% if edu.degree %}
+        <div class="entry-sub-row">
+          <span class="entry-sub-left">{{ edu.degree }}</span>
+          {% if edu.location %}<span class="entry-sub-right">{{ edu.location }}</span>{% endif %}
+        </div>
+        {% endif %}
+        {% if edu.coursework %}
+        <div class="coursework">
+          <span class="coursework-label">Relevant Coursework:</span> {{ edu.coursework }}
+        </div>
+        {% endif %}
+        {% if edu.details %}
+        <ul class="bullets">
+          {% for d in edu.details %}<li>{{ d }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if resume.skills %}
+  <div class="section">
+    <div class="section-heading">Technical Skills</div>
+    {% for skill in resume.skills %}
+    <div class="skills-row">
+      <span class="skills-category">{{ skill.category }}:</span> {{ skill["items"] | join(", ") }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if resume.experience %}
+  <div class="section">
+    <div class="section-heading">Experience</div>
+    {% for exp in resume.experience %}
+    <div class="entry">
+      <div class="entry-row">
+        <span class="entry-left">{{ exp.company }}</span>
+        <span class="entry-right">{{ exp.date }}</span>
+      </div>
+      <div class="entry-sub-row">
+        <span class="entry-sub-left">{{ exp.role }}</span>
+        {% if exp.location %}<span class="entry-sub-right">{{ exp.location }}</span>{% endif %}
+      </div>
+      {% if exp.bullets %}
+      <ul class="bullets">
+        {% for b in exp.bullets %}<li>{{ b }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if resume.projects %}
+  <div class="section">
+    <div class="section-heading">Projects</div>
+    {% for proj in resume.projects %}
+    <div class="entry">
+      <div class="project-header">
+        <div>
+          <span class="project-name">{{ proj.name }}</span>
+          {% if proj.subtitle %} <span class="project-subtitle">| {{ proj.subtitle }}</span>{% endif %}
+          {% if proj.technologies %} <span class="project-tech">| {{ proj.technologies }}</span>{% endif %}
+        </div>
+        {% if proj.date %}<span class="project-date">{{ proj.date }}</span>{% endif %}
+      </div>
+      {% if proj.bullets %}
+      <ul class="bullets">
+        {% for b in proj.bullets %}<li>{{ b }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>

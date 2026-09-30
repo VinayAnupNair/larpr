@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaRPR | Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div><div class="brand">LaRPR<span>.</span></div><div class="eyebrow">Master profile</div><h1>Everything you have done, in one place.</h1></div>
+      <div class="header-note">list all skills and projects; tailoring picks the best<nav><a href="{{ url_for('index') }}">Tailor</a><a class="active" href="{{ url_for('profile') }}">Profile</a></nav></div>
+    </header>
+    <div class="alert" id="error" hidden></div>
+    <div class="result" id="result" hidden></div>
+    <div class="layout">
+      <section class="panel form-panel">
+        <div class="panel-title"><h2>Base resume</h2><span class="tag">data/base_resume.json</span></div>
+        <p class="hint" style="margin-top:0">Only list what you can discuss in an interview. Order skills by strength: rows that overflow one line are trimmed from the end.</p>
+        <div id="editor">Loading…</div>
+        <div class="actions"><span class="hint" id="save-hint">A backup is kept as base_resume.json.bak</span><button type="button" id="save-btn">Save profile</button></div>
+      </section>
+    </div>
+  </main>
+<script>
+const $ = (sel, root = document) => root.querySelector(sel);
+const err = $('#error'), res = $('#result'), root = $('#editor');
+let data = null;
+
+const HEADER_FIELDS = [['name','Name'],['location','Location'],['phone','Phone'],['email','Email'],
+  ['linkedin','LinkedIn label'],['linkedin_url','LinkedIn URL'],['github','GitHub label'],['github_url','GitHub URL'],['website','Website']];
+const EDU_FIELDS = [['institution','Institution'],['location','Location'],['degree','Degree'],['date','Date']];
+const EXP_FIELDS = [['company','Company'],['location','Location'],['role','Role'],['date','Date']];
+const PROJ_FIELDS = [['name','Name'],['subtitle','Subtitle (award, etc.)'],['technologies','Technologies'],['date','Date'],['url','URL']];
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v; else if (k.startsWith('on')) e[k] = v; else e.setAttribute(k, v);
+  }
+  kids.flat().forEach(k => e.append(k));
+  return e;
+}
+
+function textField(obj, key, label, cls = '') {
+  const input = el('input', { type: 'text', value: obj[key] || '' });
+  input.oninput = () => { obj[key] = input.value; };
+  return el('label', { class: cls }, label, input);
+}
+
+function areaField(label, getValue, setValue, cls = 'full', short = false) {
+  const area = el('textarea', { class: short ? 'short' : '' });
+  area.value = getValue();
+  area.oninput = () => setValue(area.value);
+  return el('label', { class: cls }, label, area);
+}
+
+const lines = s => s.split('\n').map(x => x.trim()).filter(Boolean);
+const csv = s => s.split(',').map(x => x.trim()).filter(Boolean);
+
+function tools(list, i, rerender) {
+  const move = d => () => { const j = i + d; if (j < 0 || j >= list.length) return; [list[i], list[j]] = [list[j], list[i]]; rerender(); };
+  return el('div', { class: 'card-tools' },
+    el('button', { type: 'button', class: 'small ghost', onclick: move(-1) }, '↑'),
+    el('button', { type: 'button', class: 'small ghost', onclick: move(1) }, '↓'),
+    el('button', { type: 'button', class: 'small ghost danger', onclick: () => { list.splice(i, 1); rerender(); } }, 'Delete'));
+}
+
+function section(title, list, blank, cardFn) {
+  const wrap = el('div', { class: 'section' });
+  const rerender = () => { wrap.replaceWith(section(title, list, blank, cardFn)); };
+  wrap.append(el('h3', {}, title, el('button', { type: 'button', class: 'small ghost', onclick: () => { list.push(blank()); rerender(); } }, '+ Add')));
+  list.forEach((item, i) => wrap.append(el('div', { class: 'card' }, tools(list, i, rerender), el('div', { class: 'fields' }, cardFn(item)))));
+  return wrap;
+}
+
+function build() {
+  root.replaceChildren();
+  const h = el('div', { class: 'section' }, el('h3', {}, 'Header'), el('div', { class: 'fields' }, HEADER_FIELDS.map(([k, l]) => textField(data.header, k, l))));
+  root.append(h);
+  root.append(el('div', { class: 'section' }, el('h3', {}, 'Summary (default; rewritten per job)'),
+    el('div', { class: 'fields' }, areaField('Summary', () => data.summary || '', v => { data.summary = v; }, 'full', true))));
+
+  root.append(section('Education and certifications', data.education,
+    () => ({ institution: '', date: '', type: 'degree' }),
+    e => [
+      ...EDU_FIELDS.map(([k, l]) => textField(e, k, l)),
+      (() => { const s = el('select', {}, el('option', {}, 'degree'), el('option', {}, 'certification')); s.value = e.type || 'degree'; s.onchange = () => { e.type = s.value; }; return el('label', {}, 'Type', s); })(),
+      areaField('Coursework (comma separated)', () => e.coursework || '', v => { e.coursework = v; }, 'full', true),
+      areaField('Details (one per line)', () => (e.details || []).join('\n'), v => { e.details = lines(v); }, 'full', true)]));
+
+  root.append(section('Skills (master list)', data.skills,
+    () => ({ category: '', items: [] }),
+    s => [textField(s, 'category', 'Category', 'full'),
+      areaField('Items, comma separated, strongest first', () => s.items.join(', '), v => { s.items = csv(v); }, 'full', true)]));
+
+  root.append(section('Experience', data.experience,
+    () => ({ company: '', role: '', date: '', bullets: [] }),
+    e => [...EXP_FIELDS.map(([k, l]) => textField(e, k, l)),
+      areaField('Bullets (one per line)', () => e.bullets.join('\n'), v => { e.bullets = lines(v); })]));
+
+  root.append(section('Projects (master list; the best 2 are chosen per job)', data.projects,
+    () => ({ name: '', bullets: [] }),
+    p => [...PROJ_FIELDS.map(([k, l]) => textField(p, k, l)),
+      areaField('Bullets (one per line)', () => p.bullets.join('\n'), v => { p.bullets = lines(v); })]));
+}
+
+function cleaned() {
+  const strip = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== ''));
+  return {
+    ...data,
+    header: strip(data.header),
+    education: data.education.map(strip),
+    skills: data.skills.filter(s => s.category.trim() || s.items.length),
+    experience: data.experience.map(strip),
+    projects: data.projects.map(strip),
+    summary: data.summary || undefined,
+  };
+}
+
+async function load() {
+  const r = await fetch('/api/profile');
+  data = await r.json();
+  for (const k of ['education', 'skills', 'experience', 'projects']) data[k] = data[k] || [];
+  data.header = data.header || {};
+  build();
+}
+
+$('#save-btn').onclick = async () => {
+  err.hidden = res.hidden = true;
+  const btn = $('#save-btn'); btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const r = await fetch('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleaned()) });
+    const body = await r.json();
+    if (!r.ok) throw new Error(body.error || 'Save failed');
+    res.textContent = 'Profile saved.'; res.hidden = false;
+  } catch (ex) { err.textContent = ex.message; err.hidden = false; }
+  finally { btn.disabled = false; btn.textContent = 'Save profile'; }
+};
+
+load().catch(ex => { root.textContent = ''; err.textContent = 'Could not load profile: ' + ex.message; err.hidden = false; });
+</script>
+</body>
+</html>
